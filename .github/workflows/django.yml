@@ -1,0 +1,58 @@
+name: Django CI
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+    strategy:
+      max-parallel: 4
+      matrix:
+        python-version: [3.11]
+    if: github.event_name == 'push' && !contains(github.event.head_commit.message, '[skip ci]')  # 👈 skip commit
+    steps:
+    - uses: actions/checkout@v4
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v3
+      with:
+        python-version: ${{ matrix.python-version }}
+    - name: Install Dependencies
+      run: |
+        pwd
+        ls -al
+        cd ./DREAM-ML-backend/GEML/
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+      
+    - name: Run Tests with Coverage
+      run: |
+        pwd
+        ls -al
+        cd ./DREAM-ML-backend/GEML/
+        # Run pytest with coverage - this will fail if tests fail
+        coverage run --source='.' -m pytest
+        # Generate coverage report
+        coverage report
+        coverage html
+        
+    - name: Check Coverage Threshold
+      run: |
+        cd ./DREAM-ML-backend/GEML/
+        # Check if coverage is at least 75%
+        coverage report --fail-under=75
+        
+    - name: Upload htmlcov report
+      # Only upload if previous steps succeeded
+      if: success()
+      uses: actions/upload-artifact@v4
+      with:
+        name: htmlcov-report
+        path: ./DREAM-ML-backend/GEML/htmlcov/

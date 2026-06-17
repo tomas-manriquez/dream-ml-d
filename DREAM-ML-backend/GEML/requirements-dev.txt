@@ -1,0 +1,9 @@
+# Development and Testing dependencies for GEML
+# Install with: pip install -r requirements-base.txt -r requirements-dev.txt
+# All versions locked to match production environment (Python 3.11.14)
+
+# Testing
+pytest==8.3.4
+pytest-django==4.9.0
+pytest-asyncio==0.21.0
+coverage==7.6.10

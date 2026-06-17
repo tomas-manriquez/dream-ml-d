@@ -1,0 +1,68 @@
+version: '3.8'
+
+################################################################################
+# DREAM ML - Production Deployment Configuration
+################################################################################
+# This docker-compose.yml uses pre-built images from Docker Hub
+# Version: v2.2.8
+#
+# Usage:
+#   docker-compose up -d
+#
+# Access:
+#   Frontend: http://localhost:5173
+#   Backend:  http://localhost:8000
+#   MLflow:   http://localhost:5000
+################################################################################
+
+services:
+  backend:
+    image: tomasmanriquez480/dreaml-ml-backend:v2.2.8
+    # Platform auto-detected by Docker based on host architecture
+    # Multi-platform manifest supports both linux/amd64 and linux/arm64
+    ports:
+      - "8000:8000"
+      - "5000:5000"
+    env_file:
+      - .env
+    environment:
+      - DEBUG=0
+    volumes:
+      # Bind mount for experiments - allows direct file access from host
+      - ./experimentos:/app/experimentos
+      # Named volumes for persistent data (portable across platforms)
+      - mlruns:/app/mlruns
+      - media:/app/media
+      - staticfiles:/app/staticfiles
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "sh", "-c", "curl -f http://localhost:8000/api/health/ || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  frontend:
+    image: tomasmanriquez480/dreaml-ml-frontend:v2.2.8
+    # Platform auto-detected by Docker based on host architecture
+    # Multi-platform manifest supports both linux/amd64 and linux/arm64
+    ports:
+      - "5173:80"
+    env_file:
+      - .env
+    depends_on:
+      - backend
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "sh", "-c", "wget --quiet --tries=1 --spider http://localhost/ || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+# Named volumes for data persistence
+# Note: experiments uses bind mount (./experimentos) for direct host access
+volumes:
+  mlruns:
+  media:
+  staticfiles:

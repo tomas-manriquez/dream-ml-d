@@ -1,0 +1,89 @@
+# Python cache and compiled files
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+*.pyd
+
+# Virtual environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Version control
+.git/
+.gitignore
+.gitattributes
+
+# Testing and coverage
+htmlcov/
+.tox/
+.coverage
+.coverage.*
+.cache
+.pytest_cache/
+nosetests.xml
+coverage.xml
+*.cover
+.hypothesis/
+
+# Documentation
+*.md
+docs/
+README*
+LICENSE*
+CHANGELOG*
+
+# Docker files
+Dockerfile
+dockerfile
+docker-compose*.yml
+.dockerignore
+
+# CI/CD
+.github/
+.gitlab-ci.yml
+.travis.yml
+
+# Logs and databases
+*.log
+*.sql
+*.sqlite
+*.sqlite3
+db.sqlite3
+
+# MLflow and experiment artifacts (will be mounted as volumes)
+mlruns/
+mlartifacts/
+
+# Django specific
+*.pot
+local_settings.py
+media/
+staticfiles/
+
+# Development tools
+.mypy_cache/
+.dmypy.json
+dmypy.json
+.pyre/
+.pytype/
+
+# OS files
+Thumbs.db

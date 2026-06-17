@@ -1,0 +1,151 @@
+# ============================================================================
+# DREAM ML Backend - Production-Optimized Dockerfile
+# ============================================================================
+# Multi-architecture support: linux/amd64, linux/arm64
+# Python 3.11-slim-bookworm for optimal size and stability
+#
+# OPTIMIZATION SUMMARY:
+# - BuildKit cache mounts for pip (50-80% faster rebuilds)
+# - Removed build tools from runtime (gcc/g++/cmake) - saves ~250MB
+# - Removed unused dependencies (kfp) - saves ~150MB
+# - Optimized layer ordering for better caching
+# - Uses python:3.11-slim-bookworm (more stable, slightly smaller)
+# - Multi-stage build with shared pip cache
+# - Expected final size: ~1.2-1.3GB (down from 1.64GB = 25-27% reduction)
+#
+# REQUIRES: Docker BuildKit enabled (DOCKER_BUILDKIT=1)
+# ============================================================================
+
+# ============================================================================
+# Stage 1: BUILDER - Compile Cython modules and install dependencies
+# ============================================================================
+FROM python:3.11-slim-bookworm AS builder
+
+WORKDIR /app
+
+# Install build dependencies in a single layer
+# gcc, g++, cmake, build-essential: Required ONLY for compiling Cython and C extensions
+# git: Required by DVC and other packages during installation
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,target=/var/lib/apt,sharing=locked \
+    apt-get update && \
+    apt-get install -y --no-install-recommends \
+        gcc \
+        g++ \
+        cmake \
+        git \
+        build-essential && \
+    rm -rf /var/lib/apt/lists/*
+
+# Copy requirements first for better layer caching
+# If requirements don't change, this layer will be cached
+COPY requirements-base.txt .
+
+# Install Python dependencies with BuildKit cache mount
+# Cache mount persists pip downloads between builds for massive speedup
+# Using --no-cache-dir inside container (cache is in mount, not in image)
+RUN --mount=type=cache,target=/root/.cache/pip \
+    pip install --upgrade pip setuptools wheel && \
+    pip install -r requirements-base.txt
+
+# Install Cython (needed for compilation, not in requirements-base.txt)
+RUN --mount=type=cache,target=/root/.cache/pip \
+    pip install Cython>=0.29
+
+# Copy application source code
+# Doing this AFTER pip install ensures we don't invalidate pip cache on code changes
+COPY . .
+
+# Compile protected modules with Cython
+# Creates .so files from Python source files for IP protection
+RUN python setup.py build_ext --inplace
+
+# Remove original Python source files of protected modules
+# Keep only compiled .so files for code protection
+RUN rm -f api/views.py api/train.py api/data_cleaning.py api/data_encoding.py
+
+# Remove the Python source files for apiTimeSeries ?
+
+# ============================================================================
+# Stage 2: FINAL - Production runtime image
+# ============================================================================
+FROM python:3.11-slim-bookworm
+
+WORKDIR /app
+
+# Install ONLY runtime dependencies
+# git: REQUIRED at runtime for DVC operations (git add, git commit, dvc push, etc.)
+# Build tools (gcc/g++/cmake) are NOT needed - all compilation done in builder stage
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,target=/var/lib/apt,sharing=locked \
+    apt-get update && \
+    apt-get install -y --no-install-recommends \
+        git && \
+    rm -rf /var/lib/apt/lists/*
+
+# Create non-root user for security best practices
+# Using UID 1000 which is standard for first user on most systems
+RUN groupadd -r appuser -g 1000 && \
+    useradd -r -u 1000 -g appuser -m -s /bin/bash appuser
+
+# Copy Python packages from builder stage
+# This includes all pip-installed packages (numpy, pandas, tensorflow, etc.)
+# No need to reinstall - saves time and reduces layer size
+COPY --from=builder /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
+COPY --from=builder /usr/local/bin /usr/local/bin
+
+# Copy compiled application code from builder stage
+# Includes all .so files (Cython-compiled modules) and Python source
+COPY --from=builder --chown=appuser:appuser /app/ .
+
+# Create directories for persistent data with proper permissions
+# These will be mounted as volumes in docker-compose
+RUN mkdir -p \
+    /app/experimentos \
+    /app/mlruns \
+    /app/media \
+    /app/staticfiles && \
+    chown -R appuser:appuser /app
+
+# Switch to non-root user for security
+USER appuser
+
+# Expose ports
+# 8000: Django application (uvicorn ASGI server)
+# 5000: MLflow tracking server (started by Django views)
+EXPOSE 8000 5000
+
+# Declare volumes for persistent data
+# Mount these as volumes in docker-compose.yml
+VOLUME ["/app/experimentos", "/app/mlruns", "/app/media", "/app/staticfiles"]
+
+# Environment variables for Python optimization
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1
+
+# Health check for container orchestration
+# Checks if Django server is responding
+HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+    CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8000').read()" || exit 1
+
+# Start Django application via uvicorn ASGI server
+# MLflow server is started by Django views as needed
+CMD ["python", "-m", "uvicorn", "GEML.asgi:application", "--host", "0.0.0.0", "--port", "8000"]
+
+# ============================================================================
+# BUILD INSTRUCTIONS
+# ============================================================================
+# IMPORTANT: Requires Docker BuildKit for cache mounts and optimization
+# Enable with: export DOCKER_BUILDKIT=1
+#
+# Use the build script for production builds:
+#   ./scripts/build/build-and-push.sh
+#
+# Manual build examples:
+#   For linux/amd64: docker buildx build --platform linux/amd64 -t geml:amd64 .
+#   For linux/arm64: docker buildx build --platform linux/arm64 -t geml:arm64 .
+#
+# See BUILD_INSTRUCTIONS.md for detailed guide
+# ============================================================================

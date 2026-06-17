@@ -1,0 +1,53 @@
+version: '3.8'
+services:
+  backend:
+    build:
+      context: ./DREAM-ML-backend/GEML
+      dockerfile: dockerfile
+    # Platform auto-detected by Docker based on host architecture
+    ports:
+      - "8000:8000"
+      - "5000:5000"
+    env_file:
+      - .env
+    environment:
+      - DEBUG=0
+    volumes:
+      # Bind mount for experiments - allows direct file access from host
+      - ./experimentos:/app/experimentos
+      # Named volumes for persistent data (portable across platforms)
+      - mlruns:/app/mlruns
+      - media:/app/media
+      - staticfiles:/app/staticfiles
+    deploy:
+      resources:
+        limits:
+          cpus: '4.0'
+          memory: 8G
+        reservations:
+          memory: 4G
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./DREAM-ML-frontend/frontend
+      dockerfile: dockerfile
+      args:
+        - VITE_API_URL=${VITE_API_URL:-http://localhost:8000}
+        - VITE_WS_URL=${VITE_WS_URL:-ws://localhost:8000}
+        - VITE_EXPERIMENTS_DIR=${VITE_EXPERIMENTS_DIR:-/app/experimentos}
+    # Platform auto-detected by Docker based on host architecture
+    ports:
+      - "5173:80"
+    env_file:
+      - .env
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+# Named volumes for data persistence
+# Note: experiments is now a bind mount (./experimentos) instead of a named volume
+volumes:
+  mlruns:
+  media:
+  staticfiles:

@@ -1,0 +1,52 @@
+# Production dependencies for GEML
+# Python 3.11+
+# All versions locked to match production environment (Python 3.11.14)
+
+# Web Framework & ASGI
+asgiref==3.7.2
+Django==4.2.7
+django-cors-headers==3.14.0
+channels==4.2.0
+uvicorn[standard]==0.38.0
+
+# ML/Data Science
+numpy==1.26.4
+pandas==2.2.3
+scipy==1.13.1
+scikit_learn==1.6.1
+scikit-optimize==0.10.2  # Bayesian optimization (archived, plan migration to Optuna)
+optuna==4.6.0  # Modern hyperparameter optimization (for future migration)
+tensorflow==2.19.1  # Works on both amd64 and arm64 platforms
+accelerate==0.21.0
+xgboost==3.1.1
+sktime==0.39.0
+skforecast==0.18.0
+statsmodels==0.14.5  # Required for ARIMA/SARIMAX time series models
+
+# PatchTSMixer dependencies (tested versions for stability and reproducibility)
+# PyTorch 2.0.1: CPU-only forced for maximum reproducibility across environments
+# Transformers 4.36.0: First stable release with PatchTSMixer support (added in v4.36.0)
+torch==2.0.1
+transformers==4.37.0
+
+# ML Operations
+mlflow==2.13.2
+codecarbon==2.8.3
+
+# Data Visualization
+matplotlib==3.8.2
+seaborn==0.13.2
+sweetviz==2.3.1
+ydata_profiling==4.12.0
+svglib==1.5.1
+
+# Data Version Control
+dvc==3.66.1
+
+# Utilities
+psutil==5.9.6
+Requests==2.32.3
+reportlab==4.0.8
+
+# Build dependencies (needed for Cython compilation)
+Cython==3.2.1

@@ -1,0 +1,40 @@
+# Created by venv; see https://docs.python.org/3/library/venv.html
+.venv/
+bin/
+pyvenv.cfg
+DREAM-ML-backend/GEML/__pycache__
+DREAM-ML-backend/GEML/api/__pycache__/
+DREAM-ML-backend/GEML/.pytest_cache/
+DREAM-ML-backend/GEML/api/migrations/
+DREAM-ML-backend/GEML/.coverage
+DREAM-ML-backend/GEML/GEML/__pycache__/
+experimentos/
+host_experimentos/
+.pytest_cache/
+DREAM-ML-backend/GEML/tests/api_tests/__pycache__/
+DREAM-ML-backend/GEML/tests/apiTimeSeries_tests/__pycache__/
+DREAM-ML-backend/GEML/apiTimeSeries/__pycache__/*.pyc
+build-backend-amd64.log
+build-backend-amd64.log
+build-backend-arm64.log
+build-frontend-amd64.log
+build-frontend-arm64.log
+.env
+.claude/
+DREAM-ML-backend/GEML/datasets/tests
+DREAM-ML-backend/GEML/DREAM-ML-backend/GEML/.coverage
+dependency-security/reports
+Docs/.DS_Store
+Docs/Fichas Datasets/.DS_Store
+DREAM-ML-backend/.DS_Store
+DREAM-ML-backend/GEML/.DS_Store
+DREAM-ML-backend/GEML/mlruns/
+datasets/.DS_Store
+dependency-security/.DS_Store
+scripts/.DS_Store
+scripts/install/.DS_Store
+thoughts/.DS_Store
+thoughts/shared/.DS_Store
+thoughts/shared/research/python dask tutorial.md
+thoughts/shared/research/python pySpark tutorial.md
+dream-ml.zip

@@ -79,3 +79,10 @@ docker-compose up --build
 ```
 > Este software está licenciado bajo la Licencia Pública General GNU v3.0 (GPLv3).  
 
+## Development workflow
+
+  Most features were built from approved designs with **Claude Code** (VS Code extension and CLI) as the primary development
+  environment, in **Interactive and Plan modes**, following a developer-controlled loop: spec → research → plan →
+  implement, with generated code reviewed and validated before merging.
+
+  Contributed approximately 50% of the codebase (~5–10 KLOC).
